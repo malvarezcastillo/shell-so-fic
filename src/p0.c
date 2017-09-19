@@ -2,12 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#define ELEMENTOS_MAX 1024
 
 int terminado = 0;
-char comando[255];
-char *comando_troceado[255];
 
-int trocearCadena(char *cadena, char *trozos[])
+int trocear_cadena(char *cadena, char *trozos[])
 {
   int i = 1;
   if ((trozos[0] = strtok(cadena, " \n\t")) == NULL)
@@ -26,9 +25,11 @@ void imprimir_prompt()
   printf("$ ");
 }
 
-void leer_entrada()
+char *leer_entrada()
 {
-  fgets(comando, 255, stdin);
+  char *entrada_teclado = (char *)malloc(sizeof(char) * ELEMENTOS_MAX);
+  fgets(entrada_teclado, ELEMENTOS_MAX, stdin);
+  return entrada_teclado;
 }
 
 void salir()
@@ -36,10 +37,10 @@ void salir()
   exit(0);
 }
 
-void imprimir_autores(const int numero_trozos)
+void imprimir_autores(int numero_trozos, char *comando_troceado[])
 {
   int i, nombres = 0, login = 0;
-  for (i = 0; i < numero_trozos; i++)
+  for (i = 1; i < numero_trozos; i++)
   {
     if (strcmp("-l", comando_troceado[i]) == 0)
     {
@@ -49,19 +50,24 @@ void imprimir_autores(const int numero_trozos)
     {
       nombres = 1;
     }
-      //TODO Opcion desconocida si parametro desconocido
+    else if (strcmp("-h", comando_troceado[i]) == 0)
+    {
+      printf("Imprime los autores de este shell\n");
+      printf("Uso: autores [-l|-n]\n");
+      return;
+    }
+    else
+    {
+      printf("Parametro %s desconocido\n", comando_troceado[i]);
+      return;
+    }
+    //TODO Opcion desconocida si parametro desconocido
   }
 
   if (!nombres && !login)
   {
     nombres = 1;
     login = 1;
-  }
-
-  if (nombres && login)
-  {
-    printf("Autores:\n");
-    printf("________\n\n");
   }
 
   if (nombres)
@@ -82,42 +88,55 @@ void imprimir_autores(const int numero_trozos)
   printf("\n");
 }
 
-void imprimir_pid(const int numero_trozos)
+void imprimir_pid(int numero_trozos, char *comando_troceado[])
 {
-  if (numero_trozos > 1 && strcmp("-p", comando_troceado[1]) == 0)
+  if (numero_trozos == 1)
   {
-    printf("%d\n", getppid());
+    printf("PID Hijo: %d\n", getpid());
+  }
+  else if (numero_trozos > 1 && strcmp("-p", comando_troceado[1]) == 0)
+  {
+
+    printf("PID Padre: %d\n", getppid());
+  }
+  else if (numero_trozos > 1 && strcmp("-h", comando_troceado[1]) == 0)
+  {
+    printf("Imprime el PID del shell y de su proceso padre\n");
+    printf("Uso: pid [-p]\n");
+    return;
   }
   else
   {
-    printf("%d\n", getpid());
+    printf("Parametro %s desconocido\n", comando_troceado[1]);
+    return;
   }
   //TODO Opcion desconocida si troceado distinto de -p
 }
 
-void procesar_entrada()
+void procesar_entrada(char *entrada)
 {
-  //printf("Ha ejecutado: %s\n", comando);
-  int numero_trozos = trocearCadena(comando, comando_troceado);
-  //printf("Numero de trozos: %d\n", numero_trozos);
+  char *comando_troceado[ELEMENTOS_MAX];
+  int numero_trozos = trocear_cadena(entrada, comando_troceado);
+
   if (numero_trozos > 0)
   {
-
     if (strcmp("exit", comando_troceado[0]) == 0 ||
         strcmp("end", comando_troceado[0]) == 0 ||
         strcmp("fin", comando_troceado[0]) == 0)
     {
+      free(entrada);
       salir();
     }
     else if (strcmp("autores", comando_troceado[0]) == 0)
     {
-      imprimir_autores(numero_trozos);
+      imprimir_autores(numero_trozos, comando_troceado);
     }
     else if (strcmp("pid", comando_troceado[0]) == 0)
     {
-      imprimir_pid(numero_trozos);
+      imprimir_pid(numero_trozos, comando_troceado);
     }
   }
+  free(entrada);
 }
 
 int main(void)
@@ -125,7 +144,6 @@ int main(void)
   while (!terminado)
   {
     imprimir_prompt();
-    leer_entrada();
-    procesar_entrada();
+    procesar_entrada(leer_entrada());
   }
 }
