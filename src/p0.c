@@ -61,7 +61,6 @@ void imprimir_autores(int numero_trozos, char *comando_troceado[])
       printf("Parametro %s desconocido\n", comando_troceado[i]);
       return;
     }
-    //TODO Opcion desconocida si parametro desconocido
   }
 
   if (!nombres && !login)
@@ -92,12 +91,12 @@ void imprimir_pid(int numero_trozos, char *comando_troceado[])
 {
   if (numero_trozos == 1)
   {
-    printf("PID Hijo: %d\n", getpid());
+    printf("%d\n", getpid());
   }
   else if (numero_trozos > 1 && strcmp("-p", comando_troceado[1]) == 0)
   {
 
-    printf("PID Padre: %d\n", getppid());
+    printf("%d\n", getppid());
   }
   else if (numero_trozos > 1 && strcmp("-h", comando_troceado[1]) == 0)
   {
@@ -110,7 +109,6 @@ void imprimir_pid(int numero_trozos, char *comando_troceado[])
     printf("Parametro %s desconocido\n", comando_troceado[1]);
     return;
   }
-  //TODO Opcion desconocida si troceado distinto de -p
 }
 
 void procesar_entrada(char *entrada)
