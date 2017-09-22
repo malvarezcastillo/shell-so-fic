@@ -2,11 +2,16 @@ CC=gcc
 CFLAGS=-g -Wall
 DEPS=
 
-all: p0
+all: clean p0 p1
+
+
+p1:
+	mkdir -p bin
+	gcc -g -Wall -o bin/p1.out src/p1.c
 
 p0:
 	mkdir -p bin
-	gcc -g -Wall -o bin/shell.out src/p0.c
+	gcc -g -Wall -o bin/p0.out src/p0.c
 
 clean:
-	rm -f bin/shell.out
+	rm -f bin/*.out

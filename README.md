@@ -10,7 +10,9 @@ There are clear commits indicating when the iteration for each assigment finishe
 To run the shell you need gcc installed and to compile & run in a Linux system you must (Programmed and tested on an Ubuntu 17.04 machine)
 
 ```
-make clean
 make 
-./bin/shell.out 
+./bin/pX.out 
 ```
+
+Replace 'X' with the number of assigment [0-4]
+
