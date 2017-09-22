@@ -5,7 +5,7 @@ DEPS=
 all: p0
 
 p0:
-	gcc -g -Wall -o p0 p0.c
+	gcc -g -Wall -o ../bin/p0 p0.c
 
 clean:
-	rm -f p0
+	rm -f ../bin/p0
