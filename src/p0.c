@@ -34,7 +34,7 @@ char *leer_entrada()
 
 void salir()
 {
-  exit(0);
+  terminado = 1;
 }
 
 void imprimir_autores(int numero_trozos, char *comando_troceado[])
@@ -124,7 +124,6 @@ void procesar_entrada(char *entrada)
         strcmp("end", comando_troceado[0]) == 0 ||
         strcmp("fin", comando_troceado[0]) == 0)
     {
-      free(entrada);
       salir();
     }
     else if (strcmp("autores", comando_troceado[0]) == 0)
@@ -134,6 +133,10 @@ void procesar_entrada(char *entrada)
     else if (strcmp("pid", comando_troceado[0]) == 0)
     {
       imprimir_pid(numero_trozos, comando_troceado);
+    }
+    else
+    {
+      printf("Comando desconocido: %s\n", comando_troceado[0]);
     }
   }
   free(entrada);
@@ -146,4 +149,6 @@ int main(void)
     imprimir_prompt();
     procesar_entrada(leer_entrada());
   }
+
+  exit(0);
 }
