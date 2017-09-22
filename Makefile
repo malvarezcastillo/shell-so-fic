@@ -7,7 +7,7 @@ all: clean p0 p1
 
 p1:
 	mkdir -p bin
-	gcc -g -Wall -o bin/p1.out src/p1.c
+	gcc -g -Wall -o bin/p1.out src/p1.c src/provided_functions.c
 
 p0:
 	mkdir -p bin

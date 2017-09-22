@@ -1,24 +1,12 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include "provided_functions.h"
+
 #define ELEMENTOS_MAX 1024
 
 int terminado = 0;
-
-int trocear_cadena(char *cadena, char *trozos[])
-{
-  int i = 1;
-  if ((trozos[0] = strtok(cadena, " \n\t")) == NULL)
-  {
-    return 0;
-  }
-  while ((trozos[i] = strtok(NULL, " \n\t")) != NULL)
-  {
-    i++;
-  }
-  return i;
-}
 
 void imprimir_prompt()
 {
