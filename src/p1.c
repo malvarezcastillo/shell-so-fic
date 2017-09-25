@@ -2,24 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <errno.h>
+
 #include "provided_functions.h"
 
 #define ELEMENTOS_MAX 1024
-
 int terminado = 0;
 
-void imprimir_prompt()
-{
-  printf("$ ");
-}
-
-char *leer_entrada()
-{
-  char *entrada_teclado = (char *)malloc(sizeof(char) * ELEMENTOS_MAX);
-  fgets(entrada_teclado, ELEMENTOS_MAX, stdin);
-  return entrada_teclado;
-}
-
+/*P0*/
 void salir()
 {
   terminado = 1;
@@ -99,6 +92,58 @@ void imprimir_pid(int numero_trozos, char *comando_troceado[])
   }
 }
 
+/*P1*/
+
+void info(int numero_trozos, char *comando_troceado[])
+{
+  /* TODO Follow symlinks, show file name only instead of relative path
+  * show username, group instead of just id
+  */
+  char fecha[256];
+  int i;
+  struct stat atributos;
+  for (i = 1; i < numero_trozos; i++)
+  {
+    int salida = stat(comando_troceado[i], &atributos);
+    if (salida == 0)
+    {
+      printf("%zu ", atributos.st_ino);
+      printf("%s", convierte_modo2(atributos.st_mode));
+      printf("%zu ", atributos.st_nlink);
+      printf("%d ", atributos.st_uid);
+      printf("%d ", atributos.st_gid);
+      printf("%zu ", atributos.st_size);
+      strftime(fecha, sizeof(fecha), "%b %e %H:%M", localtime(&(atributos.st_ctime)));
+      printf("%s ", fecha);
+      printf("%s\n", comando_troceado[1]);
+    }
+    else
+    {
+      if (errno == 2)
+      {
+        printf("Fichero o directorio desconocido: %s\n", comando_troceado[1]);
+      }
+      else
+      {
+        printf("Error no controlado obteniendo info de fichero %s: %d %s\n",
+               comando_troceado[1], errno, strerror(errno));
+      }
+    }
+  }
+}
+
+void imprimir_prompt()
+{
+  printf("$ ");
+}
+
+char *leer_entrada()
+{
+  char *entrada_teclado = (char *)malloc(sizeof(char) * ELEMENTOS_MAX);
+  fgets(entrada_teclado, ELEMENTOS_MAX, stdin);
+  return entrada_teclado;
+}
+
 void procesar_entrada(char *entrada)
 {
   char *comando_troceado[ELEMENTOS_MAX];
@@ -119,6 +164,10 @@ void procesar_entrada(char *entrada)
     else if (strcmp("pid", comando_troceado[0]) == 0)
     {
       imprimir_pid(numero_trozos, comando_troceado);
+    }
+    else if (strcmp("info", comando_troceado[0]) == 0)
+    {
+      info(numero_trozos, comando_troceado);
     }
     else
     {
