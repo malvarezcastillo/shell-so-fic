@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
+#include <limits.h>
 
 #include "provided_functions.h"
 
@@ -111,7 +112,7 @@ void info(int numero_trozos, char *comando_troceado[])
 
   for (i = 1; i < numero_trozos; i++)
   {
-    int salida = stat(comando_troceado[i], &atributos);
+    int salida = lstat(comando_troceado[i], &atributos);
     if (salida == 0)
     {
       printf("%ld ", (long)atributos.st_ino);
@@ -137,14 +138,33 @@ void info(int numero_trozos, char *comando_troceado[])
       strftime(fecha, sizeof(fecha), "%b %e %H:%M",
                localtime(&(atributos.st_ctime)));
       printf("%s ", fecha);
+
+      //FIXME Messy logic, refactor at some point
       ptr = strrchr(comando_troceado[1], ch);
+      char symlink_s[PATH_MAX + 1];
+      char *resultado_rp = realpath(comando_troceado[1], symlink_s);
+      int is_link = S_ISLNK(atributos.st_mode);
       if (ptr != NULL)
       {
-        printf("%s\n", ptr + 1);
+        if (is_link && resultado_rp)
+        {
+          printf("%s -> %s\n", ptr + 1, symlink_s);
+        }
+        else
+        {
+          printf("%s\n", ptr + 1);
+        }
       }
       else
       {
-        printf("%s\n", comando_troceado[1]);
+        if (is_link && resultado_rp)
+        {
+          printf("%s -> %s\n", comando_troceado[1], symlink_s);
+        }
+        else
+        {
+          printf("%s\n", comando_troceado[1]);
+        }
       }
     }
     else
