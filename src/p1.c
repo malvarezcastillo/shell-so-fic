@@ -100,68 +100,74 @@ void imprimir_pid(int numero_trozos, char *comando_troceado[])
 
 /*P1*/
 
-void info(int numero_trozos, char *comando_troceado[])
+void imprimir_info(const char *nombre)
 {
   char fecha[256];
-  int i;
   struct stat atributos;
   struct passwd *pwd;
   struct group *grp;
 
-  for (i = 1; i < numero_trozos; i++)
+  int salida = lstat(nombre, &atributos);
+  if (salida == 0)
   {
-    int salida = lstat(comando_troceado[i], &atributos);
-    if (salida == 0)
+    printf("%ld ", (long)atributos.st_ino);
+    printf("%s", convierte_modo2(atributos.st_mode));
+    printf("%ld ", (long)atributos.st_nlink);
+    if ((pwd = getpwuid(atributos.st_uid)) != NULL)
     {
-      printf("%ld ", (long)atributos.st_ino);
-      printf("%s", convierte_modo2(atributos.st_mode));
-      printf("%ld ", (long)atributos.st_nlink);
-      if ((pwd = getpwuid(atributos.st_uid)) != NULL)
-      {
-        printf("%-8.8s ", pwd->pw_name);
-      }
-      else
-      {
-        printf("%-8d ", atributos.st_uid);
-      }
-      if ((grp = getgrgid(atributos.st_gid)) != NULL)
-      {
-        printf("%-8.8s ", grp->gr_name);
-      }
-      else
-      {
-        printf("%-8d ", atributos.st_gid);
-      }
-      printf("%lld ", (long long)atributos.st_size);
-      strftime(fecha, sizeof(fecha), "%b %e %H:%M",
-               localtime(&(atributos.st_mtime)));
-      printf("%s ", fecha);
-
-      char symlink_s[PATH_MAX + 1];
-      char *resultado_rp = realpath(comando_troceado[1], symlink_s);
-      int es_link = S_ISLNK(atributos.st_mode);
-
-      if (es_link && resultado_rp)
-      {
-        printf("%s -> %s\n", comando_troceado[1], symlink_s);
-      }
-      else
-      {
-        printf("%s\n", comando_troceado[1]);
-      }
+      printf("%-8.8s ", pwd->pw_name);
     }
     else
     {
-      if (errno == 2)
-      {
-        printf("Fichero o directorio desconocido: %s\n", comando_troceado[1]);
-      }
-      else
-      {
-        printf("Error no controlado obteniendo info de fichero %s: %d %s\n",
-               comando_troceado[1], errno, strerror(errno));
-      }
+      printf("%-8d ", atributos.st_uid);
     }
+    if ((grp = getgrgid(atributos.st_gid)) != NULL)
+    {
+      printf("%-8.8s ", grp->gr_name);
+    }
+    else
+    {
+      printf("%-8d ", atributos.st_gid);
+    }
+    printf("%lld ", (long long)atributos.st_size);
+    strftime(fecha, sizeof(fecha), "%b %e %H:%M",
+             localtime(&(atributos.st_mtime)));
+    printf("%s ", fecha);
+
+    char symlink_s[PATH_MAX + 1];
+    char *resultado_rp = realpath(nombre, symlink_s);
+    int es_link = S_ISLNK(atributos.st_mode);
+
+    if (es_link && resultado_rp)
+    {
+      printf("%s -> %s\n", nombre, symlink_s);
+    }
+    else
+    {
+      printf("%s\n", nombre);
+    }
+  }
+  else
+  {
+    if (errno == 2)
+    {
+      printf("Fichero o directorio desconocido: %s\n", nombre);
+    }
+    else
+    {
+      printf("Error no controlado obteniendo info de fichero %s: %d %s\n",
+             nombre, errno, strerror(errno));
+    }
+  }
+}
+
+void info(int numero_trozos, char *comando_troceado[])
+{
+  int i;
+
+  for (i = 1; i < numero_trozos; i++)
+  {
+    imprimir_info(comando_troceado[i]);
   }
 }
 
@@ -172,7 +178,7 @@ int es_directorio(const char *ruta)
   return S_ISDIR(stat_ruta.st_mode);
 }
 
-void listar_directorio(const char *nombre)
+void listar_directorio(const char *nombre, int descripcion_larga)
 {
   DIR *dir;
   struct dirent *entrada;
@@ -192,13 +198,21 @@ void listar_directorio(const char *nombre)
   }
 
   printf("%s:\n", nombre);
+
   while ((entrada = readdir(dir)) != NULL)
   {
-    if (strcmp(entrada->d_name, ".") == 0 || strcmp(entrada->d_name, "..") == 0)
+    if (strncmp(entrada->d_name, ".", 1) == 0)
     {
       continue;
     }
-    printf("%s ", entrada->d_name);
+    if (descripcion_larga)
+    {
+      imprimir_info(entrada->d_name);
+    }
+    else
+    {
+      printf("%s ", entrada->d_name);
+    }
   }
   printf("\n\n");
   closedir(dir);
@@ -208,7 +222,7 @@ void listar_directorio(const char *nombre)
 
     while ((entrada = readdir(dir)) != NULL)
     {
-      if (strcmp(entrada->d_name, ".") == 0 || strcmp(entrada->d_name, "..") == 0)
+      if (strncmp(entrada->d_name, ".", 1) == 0)
       {
         continue;
       }
@@ -216,17 +230,36 @@ void listar_directorio(const char *nombre)
       snprintf(ruta, sizeof(ruta), "%s/%s", nombre, entrada->d_name);
       if (es_directorio(ruta))
       {
-        listar_directorio(ruta);
+        listar_directorio(ruta, descripcion_larga);
       }
     }
-
     closedir(dir);
   }
 }
 
 void list(int numero_trozos, char *comando_troceado[])
 {
-  listar_directorio(comando_troceado[1]);
+  int i;
+  int largo = 0;
+  if (numero_trozos == 1)
+  {
+    listar_directorio(".", 0);
+  }
+  else if (numero_trozos == 2 && strcmp(comando_troceado[1], "-l") == 0)
+  {
+    listar_directorio(".", 1);
+  }
+  else
+  {
+    if (strcmp(comando_troceado[1], "-l") == 0)
+    {
+      largo = 1;
+    }
+    for (i = 1 + largo; i < numero_trozos; i++)
+    {
+      listar_directorio(comando_troceado[i], largo);
+    }
+  }
 }
 
 void recursive(int numero_trozos, char *comando_troceado[])
