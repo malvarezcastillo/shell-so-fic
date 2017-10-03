@@ -14,6 +14,7 @@
 #include "provided_functions.h"
 
 #define ELEMENTOS_MAX 1024
+
 int terminado = 0;
 int es_recursivo = 0;
 
@@ -101,9 +102,6 @@ void imprimir_pid(int numero_trozos, char *comando_troceado[])
 
 void info(int numero_trozos, char *comando_troceado[])
 {
-  /* TODO Follow symlinks, show file name only instead of relative path
-  * show username, group instead of just id
-  */
   char fecha[256];
   int i;
   struct stat atributos;
@@ -171,40 +169,64 @@ int es_directorio(const char *ruta)
 {
   struct stat stat_ruta;
   stat(ruta, &stat_ruta);
-  printf("\n%s: %d\n", ruta, S_ISDIR(stat_ruta.st_mode));
-  return S_ISREG(stat_ruta.st_mode);
+  return S_ISDIR(stat_ruta.st_mode);
 }
 
-void listdir(const char *name, int indent)
+void listar_directorio(const char *nombre)
 {
   DIR *dir;
-  struct dirent *entry;
+  struct dirent *entrada;
 
-  if (!(dir = opendir(name)))
-    return;
-
-  while ((entry = readdir(dir)) != NULL)
+  if (!(dir = opendir(nombre)))
   {
-    if (entry->d_type == DT_DIR)
+    if (errno == 2)
     {
-      char path[ELEMENTOS_MAX];
-      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-        continue;
-      snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
-      printf("%*s[%s]\n", indent, "", entry->d_name);
-      listdir(path, indent + 2);
+      printf("Directorio inexistente insuficientes privilegios: %s\n", nombre);
     }
     else
     {
-      printf("%*s- %s\n", indent, "", entry->d_name);
+      printf("Error no controlado obteniendo info de fichero %s: %d %s\n",
+             nombre, errno, strerror(errno));
     }
+    return;
   }
+
+  printf("%s:\n", nombre);
+  while ((entrada = readdir(dir)) != NULL)
+  {
+    if (strcmp(entrada->d_name, ".") == 0 || strcmp(entrada->d_name, "..") == 0)
+    {
+      continue;
+    }
+    printf("%s ", entrada->d_name);
+  }
+  printf("\n\n");
   closedir(dir);
+  if (es_recursivo)
+  {
+    dir = opendir(nombre);
+
+    while ((entrada = readdir(dir)) != NULL)
+    {
+      if (strcmp(entrada->d_name, ".") == 0 || strcmp(entrada->d_name, "..") == 0)
+      {
+        continue;
+      }
+      char ruta[PATH_MAX + 1];
+      snprintf(ruta, sizeof(ruta), "%s/%s", nombre, entrada->d_name);
+      if (es_directorio(ruta))
+      {
+        listar_directorio(ruta);
+      }
+    }
+
+    closedir(dir);
+  }
 }
 
 void list(int numero_trozos, char *comando_troceado[])
 {
-  listdir(comando_troceado[1], 0);
+  listar_directorio(comando_troceado[1]);
 }
 
 void recursive(int numero_trozos, char *comando_troceado[])
