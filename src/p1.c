@@ -14,6 +14,7 @@
 
 #define ELEMENTOS_MAX 1024
 int terminado = 0;
+int es_recursivo = 0;
 
 /*P0*/
 void salir()
@@ -107,8 +108,6 @@ void info(int numero_trozos, char *comando_troceado[])
   struct stat atributos;
   struct passwd *pwd;
   struct group *grp;
-  char *ptr;
-  int ch = '/';
 
   for (i = 1; i < numero_trozos; i++)
   {
@@ -136,35 +135,20 @@ void info(int numero_trozos, char *comando_troceado[])
       }
       printf("%lld ", (long long)atributos.st_size);
       strftime(fecha, sizeof(fecha), "%b %e %H:%M",
-               localtime(&(atributos.st_ctime)));
+               localtime(&(atributos.st_mtime)));
       printf("%s ", fecha);
 
-      //FIXME Messy logic, refactor at some point
-      ptr = strrchr(comando_troceado[1], ch);
       char symlink_s[PATH_MAX + 1];
       char *resultado_rp = realpath(comando_troceado[1], symlink_s);
-      int is_link = S_ISLNK(atributos.st_mode);
-      if (ptr != NULL)
+      int es_link = S_ISLNK(atributos.st_mode);
+
+      if (es_link && resultado_rp)
       {
-        if (is_link && resultado_rp)
-        {
-          printf("%s -> %s\n", ptr + 1, symlink_s);
-        }
-        else
-        {
-          printf("%s\n", ptr + 1);
-        }
+        printf("%s -> %s\n", comando_troceado[1], symlink_s);
       }
       else
       {
-        if (is_link && resultado_rp)
-        {
-          printf("%s -> %s\n", comando_troceado[1], symlink_s);
-        }
-        else
-        {
-          printf("%s\n", comando_troceado[1]);
-        }
+        printf("%s\n", comando_troceado[1]);
       }
     }
     else
@@ -179,6 +163,41 @@ void info(int numero_trozos, char *comando_troceado[])
                comando_troceado[1], errno, strerror(errno));
       }
     }
+  }
+}
+
+void recursive(int numero_trozos, char *comando_troceado[])
+{
+  if (numero_trozos >= 2)
+  {
+    if ((strcmp("ON", comando_troceado[1]) == 0) ||
+        strcmp("OFF", comando_troceado[1]) == 0)
+    {
+      if ((strcmp("ON", comando_troceado[1]) == 0))
+      {
+        es_recursivo = 1;
+      }
+      else
+      {
+        es_recursivo = 0;
+      }
+    }
+    else
+    {
+      printf("Parametro %s desconocido\n", comando_troceado[1]);
+      printf("Uso: recursive [ON|OFF]\n");
+      return;
+    }
+  }
+
+  printf("Flag Recursive esta ");
+  if (es_recursivo)
+  {
+    printf("ON\n");
+  }
+  else
+  {
+    printf("OFF\n");
   }
 }
 
@@ -218,6 +237,10 @@ void procesar_entrada(char *entrada)
     else if (strcmp("info", comando_troceado[0]) == 0)
     {
       info(numero_trozos, comando_troceado);
+    }
+    else if (strcmp("recursive", comando_troceado[0]) == 0)
+    {
+      recursive(numero_trozos, comando_troceado);
     }
     else
     {
