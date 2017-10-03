@@ -9,6 +9,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <limits.h>
+#include <dirent.h>
 
 #include "provided_functions.h"
 
@@ -166,6 +167,46 @@ void info(int numero_trozos, char *comando_troceado[])
   }
 }
 
+int es_directorio(const char *ruta)
+{
+  struct stat stat_ruta;
+  stat(ruta, &stat_ruta);
+  printf("\n%s: %d\n", ruta, S_ISDIR(stat_ruta.st_mode));
+  return S_ISREG(stat_ruta.st_mode);
+}
+
+void listdir(const char *name, int indent)
+{
+  DIR *dir;
+  struct dirent *entry;
+
+  if (!(dir = opendir(name)))
+    return;
+
+  while ((entry = readdir(dir)) != NULL)
+  {
+    if (entry->d_type == DT_DIR)
+    {
+      char path[ELEMENTOS_MAX];
+      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        continue;
+      snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
+      printf("%*s[%s]\n", indent, "", entry->d_name);
+      listdir(path, indent + 2);
+    }
+    else
+    {
+      printf("%*s- %s\n", indent, "", entry->d_name);
+    }
+  }
+  closedir(dir);
+}
+
+void list(int numero_trozos, char *comando_troceado[])
+{
+  listdir(comando_troceado[1], 0);
+}
+
 void recursive(int numero_trozos, char *comando_troceado[])
 {
   if (numero_trozos >= 2)
@@ -237,6 +278,10 @@ void procesar_entrada(char *entrada)
     else if (strcmp("info", comando_troceado[0]) == 0)
     {
       info(numero_trozos, comando_troceado);
+    }
+    else if (strcmp("list", comando_troceado[0]) == 0)
+    {
+      list(numero_trozos, comando_troceado);
     }
     else if (strcmp("recursive", comando_troceado[0]) == 0)
     {
