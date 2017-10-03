@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "provided_functions.h"
 
@@ -102,20 +104,48 @@ void info(int numero_trozos, char *comando_troceado[])
   char fecha[256];
   int i;
   struct stat atributos;
+  struct passwd *pwd;
+  struct group *grp;
+  char *ptr;
+  int ch = '/';
+
   for (i = 1; i < numero_trozos; i++)
   {
     int salida = stat(comando_troceado[i], &atributos);
     if (salida == 0)
     {
-      printf("%zu ", atributos.st_ino);
+      printf("%ld ", (long)atributos.st_ino);
       printf("%s", convierte_modo2(atributos.st_mode));
-      printf("%zu ", atributos.st_nlink);
-      printf("%d ", atributos.st_uid);
-      printf("%d ", atributos.st_gid);
-      printf("%zu ", atributos.st_size);
-      strftime(fecha, sizeof(fecha), "%b %e %H:%M", localtime(&(atributos.st_ctime)));
+      printf("%ld ", (long)atributos.st_nlink);
+      if ((pwd = getpwuid(atributos.st_uid)) != NULL)
+      {
+        printf("%-8.8s ", pwd->pw_name);
+      }
+      else
+      {
+        printf("%-8d ", atributos.st_uid);
+      }
+      if ((grp = getgrgid(atributos.st_gid)) != NULL)
+      {
+        printf("%-8.8s ", grp->gr_name);
+      }
+      else
+      {
+        printf("%-8d ", atributos.st_gid);
+      }
+      printf("%lld ", (long long)atributos.st_size);
+      strftime(fecha, sizeof(fecha), "%b %e %H:%M",
+               localtime(&(atributos.st_ctime)));
       printf("%s ", fecha);
-      printf("%s\n", comando_troceado[1]);
+      ptr = strrchr(comando_troceado[1], ch);
+      if (ptr != NULL)
+      {
+        printf("%s\n", ptr + 1);
+      }
+      else
+      {
+        printf("%s\n", comando_troceado[1]);
+      }
     }
     else
     {
