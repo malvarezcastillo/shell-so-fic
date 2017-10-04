@@ -191,7 +191,7 @@ void listar_directorio(const char *nombre, int descripcion_larga)
     }
     else
     {
-      printf("Error no controlado obteniendo info de fichero %s: %d %s\n",
+      printf("Error no controlado obteniendo info de directorio %s: %d %s\n",
              nombre, errno, strerror(errno));
     }
     return;
@@ -299,6 +299,150 @@ void recursive(int numero_trozos, char *comando_troceado[])
   }
 }
 
+void eliminar_fichero(char *ruta)
+{
+  int salida;
+  salida = unlink(ruta);
+  if (salida == 0)
+  {
+    printf("Borrado: %s \n", ruta);
+  }
+  else
+  {
+    if (errno == 2)
+    {
+      printf("Fichero desconocido: %s\n", ruta);
+    }
+    else
+    {
+      printf("Error no controlado borrando fichero %s: %d %s\n",
+             ruta, errno, strerror(errno));
+    }
+  }
+}
+
+void eliminar_recursivo(const char *nombre)
+{
+  DIR *dir;
+  struct dirent *entrada;
+
+  if (!(dir = opendir(nombre)))
+  {
+    if (errno == 2)
+    {
+      printf("Directorio inexistente insuficientes privilegios: %s\n", nombre);
+    }
+    else
+    {
+      printf("Error no controlado obteniendo info de directorio %s: %d %s\n",
+             nombre, errno, strerror(errno));
+    }
+    return;
+  }
+
+  dir = opendir(nombre);
+
+  while ((entrada = readdir(dir)) != NULL)
+  {
+    if (strcmp(".", entrada->d_name) == 0 || strcmp("..", entrada->d_name) == 0)
+    {
+      continue;
+    }
+    char ruta[PATH_MAX + 1];
+    snprintf(ruta, sizeof(ruta), "%s/%s", nombre, entrada->d_name);
+    if (es_directorio(ruta))
+    {
+      eliminar_recursivo(ruta);
+    }
+    else
+    {
+      eliminar_fichero(ruta);
+    }
+  }
+  int salida;
+  salida = rmdir(nombre);
+  if (salida == 0)
+  {
+    printf("Borrado: %s \n", nombre);
+  }
+  else
+  {
+    printf("Error no controlado borrando directorio %s: %d %s\n",
+           nombre, errno, strerror(errno));
+  }
+  closedir(dir);
+}
+
+void eliminar_directorio(char *ruta, int forzar)
+{
+  int salida;
+  salida = rmdir(ruta);
+  if (salida == 0)
+  {
+    printf("Borrado: %s \n", ruta);
+  }
+  else
+  {
+    if (errno == 39)
+    {
+      //Directorio no vacío
+      if (forzar)
+      {
+        eliminar_recursivo(ruta);
+      }
+      else
+      {
+        printf("No se pudo eliminar %s: Directorio no vacío\n", ruta);
+      }
+    }
+    else if (errno == 2)
+    {
+      printf("Fichero desconocido: %s\n", ruta);
+    }
+    else
+    {
+      printf("Error no controlado borrando directorio %s: %d %s\n",
+             ruta, errno, strerror(errno));
+    }
+  }
+}
+
+void eliminate(int numero_trozos, char *comando_troceado[])
+{
+  if (numero_trozos == 1)
+  {
+    return;
+  }
+  else if (numero_trozos == 2)
+  {
+    if (es_directorio(comando_troceado[1]))
+    {
+      eliminar_directorio(comando_troceado[1], 0);
+    }
+    else
+    {
+      eliminar_fichero(comando_troceado[1]);
+    }
+  }
+  else if (numero_trozos == 3 && strcmp("-f", comando_troceado[1]) == 0)
+  {
+    if (es_directorio(comando_troceado[2]))
+    {
+      eliminar_directorio(comando_troceado[2], 1);
+    }
+    else
+    {
+      eliminar_fichero(comando_troceado[2]);
+    }
+  }
+  else
+  {
+    printf("Parametro %s desconocido\n", comando_troceado[1]);
+    printf("Uso: eliminate [-f] nombrefichero\n");
+    return;
+  }
+}
+
 void imprimir_prompt()
 {
   printf("$ ");
@@ -343,6 +487,10 @@ void procesar_entrada(char *entrada)
     else if (strcmp("recursive", comando_troceado[0]) == 0)
     {
       recursive(numero_trozos, comando_troceado);
+    }
+    else if (strcmp("eliminate", comando_troceado[0]) == 0)
+    {
+      eliminate(numero_trozos, comando_troceado);
     }
     else
     {
