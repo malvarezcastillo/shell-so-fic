@@ -207,7 +207,9 @@ void listar_directorio(const char *nombre, int descripcion_larga)
     }
     if (descripcion_larga)
     {
-      imprimir_info(entrada->d_name);
+      char ruta[PATH_MAX + 1];
+      snprintf(ruta, sizeof(ruta), "%s/%s", nombre, entrada->d_name);
+      imprimir_info(ruta);
     }
     else
     {
