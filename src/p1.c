@@ -155,7 +155,7 @@ void imprimir_info(const char *nombre)
     }
     else
     {
-      printf("Error no controlado obteniendo info de fichero %s: %d %s\n",
+      printf("Error obteniendo info de fichero %s: %d %s\n",
              nombre, errno, strerror(errno));
     }
   }
@@ -191,7 +191,7 @@ void listar_directorio(const char *nombre, int descripcion_larga)
     }
     else
     {
-      printf("Error no controlado obteniendo info de directorio %s: %d %s\n",
+      printf("Error obteniendo info de directorio %s: %d %s\n",
              nombre, errno, strerror(errno));
     }
     return;
@@ -315,7 +315,7 @@ void eliminar_fichero(char *ruta)
     }
     else
     {
-      printf("Error no controlado borrando fichero %s: %d %s\n",
+      printf("Error borrando fichero %s: %d %s\n",
              ruta, errno, strerror(errno));
     }
   }
@@ -334,7 +334,7 @@ void eliminar_recursivo(const char *nombre)
     }
     else
     {
-      printf("Error no controlado obteniendo info de directorio %s: %d %s\n",
+      printf("Error obteniendo info de directorio %s: %d %s\n",
              nombre, errno, strerror(errno));
     }
     return;
@@ -367,7 +367,7 @@ void eliminar_recursivo(const char *nombre)
   }
   else
   {
-    printf("Error no controlado borrando directorio %s: %d %s\n",
+    printf("Error borrando directorio %s: %d %s\n",
            nombre, errno, strerror(errno));
   }
   closedir(dir);
@@ -401,7 +401,7 @@ void eliminar_directorio(char *ruta, int forzar)
     }
     else
     {
-      printf("Error no controlado borrando directorio %s: %d %s\n",
+      printf("Error borrando directorio %s: %d %s\n",
              ruta, errno, strerror(errno));
     }
   }
